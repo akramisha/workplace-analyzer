@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workplace Communication Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8 flex flex-col items-center">
+
+    <div class="w-full max-w-4xl bg-white shadow-xl rounded-xl p-6 sm:p-8 border border-blue-200">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-blue-800 mb-6">
+            Workplace Communication Analyzer
+        </h1>
+        <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">
+            Paste your email or chat conversation below to get instant feedback on professionalism, tone, clarity, and etiquette, along with suggestions for improvement.
+        </p>
+
+        <div class="mb-8">
+            <label for="communication-text" class="block text-lg font-medium text-gray-700 mb-2">
+                Paste your conversation here:
+            </label>
+            <textarea
+                id="communication-text"
+                class="w-full p-4 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ease-in-out resize-y min-h-[150px] shadow-sm text-gray-800"
+                placeholder="e.g., 'Subject: Urgent - Need this by EOD. Hi team, I need the report done ASAP. Thanks.'"
+                rows="8"
+            ></textarea>
+            <button
+                id="analyze-button"
+                class="mt-4 w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+                <svg id="loading-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Analyze Communication</span>
+            </button>
+        </div>
+
+        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-8" role="alert">
+            <strong class="font-bold">Error:</strong>
+            <span id="error-text" class="block sm:inline ml-2"></span>
+        </div>
+
+        <div id="analysis-results" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-6 sm:p-8 shadow-inner">
+            <h2 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-6 text-center">
+                Analysis Results
+            </h2>
+
+            <div class="mb-6 pb-4 border-b border-blue-200">
+                <h3 class="text-xl font-semibold text-blue-600 mb-2">
+                    Professionalism: <span id="prof-rating" class="font-bold"></span>
+                </h3>
+                <p id="prof-feedback" class="text-gray-700 leading-relaxed"></p>
+            </div>
+
+            <div class="mb-6 pb-4 border-b border-blue-200">
+                <h3 class="text-xl font-semibold text-blue-600 mb-2">
+                    Tone: <span id="tone-overall" class="font-bold text-purple-600"></span>
+                </h3>
+                <p id="tone-feedback" class="text-gray-700 leading-relaxed"></p>
+            </div>
+
+            <div class="mb-6 pb-4 border-b border-blue-200">
+                <h3 class="text-xl font-semibold text-blue-600 mb-2">
+                    Clarity: <span id="clarity-rating" class="font-bold"></span>
+                </h3>
+                <p id="clarity-feedback" class="text-gray-700 leading-relaxed"></p>
+            </div>
+
+            <div class="mb-6 pb-4 border-b border-blue-200">
+                <h3 class="text-xl font-semibold text-blue-600 mb-2">
+                    Etiquette: <span id="etiquette-rating" class="font-bold"></span>
+                </h3>
+                <p id="etiquette-feedback" class="text-gray-700 leading-relaxed"></p>
+            </div>
+
+            <div id="poor-habits-section" class="mb-6 pb-4 border-b border-blue-200 hidden">
+                <h3 class="text-xl font-semibold text-red-600 mb-2">
+                    Identified Poor Habits:
+                </h3>
+                <ul id="poor-habits-list" class="list-disc list-inside text-gray-700 space-y-1"></ul>
+            </div>
+
+            <div id="suggestions-section" class="hidden">
+                <h3 class="text-xl font-semibold text-green-700 mb-2">
+                    Suggestions for Improvement:
+                </h3>
+                <ul id="suggestions-list" class="list-disc list-inside text-gray-700 space-y-1"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const analyzeButton = document.getElementById('analyze-button');
+        const inputTextarea = document.getElementById('communication-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const analyzeButtonText = analyzeButton.querySelector('span');
+        const analysisResultsDiv = document.getElementById('analysis-results');
+        const errorMessageDiv = document.getElementById('error-message');
+        const errorTextSpan = document.getElementById('error-text');
+
+        // Helper function to update rating colors
+        function getRatingColorClass(rating) {
+            switch (rating) {
+                case 'Excellent': return 'text-green-600';
+                case 'Good': return 'text-lime-600';
+                case 'Fair': return 'text-orange-500';
+                case 'Poor': return 'text-red-600';
+                default: return '';
+            }
+        }
+
+        analyzeButton.addEventListener('click', async () => {
+            const text = inputTextarea.value.trim();
+
+            if (!text) {
+                errorMessageDiv.classList.remove('hidden');
+                errorTextSpan.textContent = 'Please enter some text to analyze.';
+                analysisResultsDiv.classList.add('hidden');
+                return;
+            }
+
+            // Reset UI
+            errorMessageDiv.classList.add('hidden');
+            analysisResultsDiv.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            analyzeButtonText.textContent = 'Analyzing...';
+            analyzeButton.disabled = true;
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log(result); // For debugging
+
+                // Update UI with results
+                document.getElementById('prof-rating').textContent = result.professionalism.rating;
+                document.getElementById('prof-rating').className = 'font-bold ' + getRatingColorClass(result.professionalism.rating);
+                document.getElementById('prof-feedback').textContent = result.professionalism.feedback;
+
+                document.getElementById('tone-overall').textContent = result.tone.overall;
+                document.getElementById('tone-feedback').textContent = result.tone.feedback;
+
+                document.getElementById('clarity-rating').textContent = result.clarity.rating;
+                document.getElementById('clarity-rating').className = 'font-bold ' + getRatingColorClass(result.clarity.rating);
+                document.getElementById('clarity-feedback').textContent = result.clarity.feedback;
+
+                document.getElementById('etiquette-rating').textContent = result.etiquette.rating;
+                document.getElementById('etiquette-rating').className = 'font-bold ' + getRatingColorClass(result.etiquette.rating);
+                document.getElementById('etiquette-feedback').textContent = result.etiquette.feedback;
+
+                // Poor Habits
+                const poorHabitsList = document.getElementById('poor-habits-list');
+                poorHabitsList.innerHTML = ''; // Clear previous list
+                if (result.poor_habits && result.poor_habits.length > 0) {
+                    result.poor_habits.forEach(habit => {
+                        const li = document.createElement('li');
+                        li.textContent = habit;
+                        poorHabitsList.appendChild(li);
+                    });
+                    document.getElementById('poor-habits-section').classList.remove('hidden');
+                } else {
+                    document.getElementById('poor-habits-section').classList.add('hidden');
+                }
+
+                // Suggestions
+                const suggestionsList = document.getElementById('suggestions-list');
+                suggestionsList.innerHTML = ''; // Clear previous list
+                if (result.suggestions && result.suggestions.length > 0) {
+                    result.suggestions.forEach(suggestion => {
+                        const li = document.createElement('li');
+                        li.textContent = suggestion;
+                        suggestionsList.appendChild(li);
+                    });
+                    document.getElementById('suggestions-section').classList.remove('hidden');
+                } else {
+                    document.getElementById('suggestions-section').classList.add('hidden');
+                }
+
+                analysisResultsDiv.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error during analysis:', error);
+                errorMessageDiv.classList.remove('hidden');
+                errorTextSpan.textContent = `Failed to analyze: ${error.message}`;
+            } finally {
+                loadingSpinner.classList.add('hidden');
+                analyzeButtonText.textContent = 'Analyze Communication';
+                analyzeButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
