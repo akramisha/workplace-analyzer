@@ -67,7 +67,7 @@ workplace-communication-analyzer/
 ```bash
 git clone origin https://github.com/akramisha/workplace-analyzer.git
 
-cd workplace-communication-analyzer
+cd workplace-analyzer
 ```
 
 ---
