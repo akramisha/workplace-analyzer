@@ -141,17 +141,9 @@ The application evaluates communication based on:
 
 ## Screenshots
 
-### Home Page
-
-```
-screenshots/home.png
-```
-
-### Analysis Result
-
-```
-screenshots/result.png
-```
+| Home page | Result page |
+|:---:|:---:|
+| ![Home](screenshots/home.png) | ![Result](screenshots/result.png) |
 
 ---
 
