@@ -143,7 +143,7 @@ The application evaluates communication based on:
 
 | Home page | Result page |
 |:---:|:---:|
-| <img src="screenshots/home" width="300"> | ![Result](screenshots/result.png) |
+| <img src="screenshots/home.png" width="300"> | ![Result](screenshots/result.png) |
 
 ---
 
